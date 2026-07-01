@@ -33,14 +33,17 @@ jobs:
 
       - name: Build Sine Wave Sample for RP2040
         run: |
-          # Переходим строго в папку сэмпла, где лежит правильный CMakeLists.txt
+          # Исправляем косяк автора: копируем родной файл импорта из SDK прямо в папку проекта
+          cp /home/runner/pico-sdk/external/pico_sdk_import.cmake samples/sine_wave_i2s_32b/pico_sdk_import.cmake
+          
+          # Переходим в папку сэмпла
           cd samples/sine_wave_i2s_32b
           mkdir build
           cd build
           
-          # Запускаем сборку, подсовывая тулчейн, который идет вместе с самим SDK
+          # Запускаем сборку с явным указанием путей для кросс-компиляции
           cmake -DPICO_SDK_PATH=/home/runner/pico-sdk \
-                -DCMAKE_TOOLCHAIN_FILE=/home/runner/pico-sdk/cmake/pico_utils.cmake \
+                -DCMAKE_TOOLCHAIN_FILE=/home/runner/pico-sdk/cmake/toolchains/pico_arm_gcc.cmake \
                 ..
           make -j$(nproc)
 
