@@ -31,20 +31,37 @@ jobs:
           unzip /home/runner/pico-sdk.zip -d /home/runner/
           mv /home/runner/pico-sdk-2.1.1/* /home/runner/pico-sdk/
 
-      - name: Build Sine Wave Sample for RP2040
+      - name: Patch and Build Sine Wave Sample
         run: |
-          # Исправляем косяк автора: копируем родной файл импорта из SDK прямо в папку проекта
-          cp /home/runner/pico-sdk/external/pico_sdk_import.cmake samples/sine_wave_i2s_32b/pico_sdk_import.cmake
-          
           # Переходим в папку сэмпла
           cd samples/sine_wave_i2s_32b
-          mkdir build
-          cd build
           
-          # Запускаем сборку с явным указанием путей для кросс-компиляции
-          cmake -DPICO_SDK_PATH=/home/runner/pico-sdk \
-                -DCMAKE_TOOLCHAIN_FILE=/home/runner/pico-sdk/cmake/toolchains/pico_arm_gcc.cmake \
-                ..
+          # Полностью переписываем CMakeLists.txt на чистый и рабочий вариант без костылей автора
+          cat << 'EOF' > CMakeLists.txt
+          cmake_minimum_required(VERSION 3.13)
+          
+          # Подключаем родной импорт из Pico SDK напрямую
+          include($ENV{PICO_SDK_PATH}/external/pico_sdk_import.cmake)
+          
+          project(sine_wave_i2s_32b C CXX ASM)
+          
+          pico_sdk_init()
+          
+          add_executable(sine_wave_i2s_32b
+              main.c
+          )
+          
+          # Подключаем саму библиотеку 32-битного аудио
+          target_link_libraries(sine_wave_i2s_32b pico_stdlib hardware_pio hardware_dma)
+          
+          # Включаем генерацию UF2 файла для прошивки
+          pico_add_extra_outputs(sine_wave_i2s_32b)
+          EOF
+          
+          # Запускаем сборку
+          mkdir build && cd build
+          export PICO_SDK_PATH=/home/runner/pico-sdk
+          cmake -DCMAKE_TOOLCHAIN_FILE=/home/runner/pico-sdk/cmake/toolchains/pico_arm_gcc.cmake ..
           make -j$(nproc)
 
       - name: Upload Ready UF2 Firmware
