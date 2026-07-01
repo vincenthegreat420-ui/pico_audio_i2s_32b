@@ -15,10 +15,10 @@ jobs:
         with:
           submodules: recursive
 
-      - name: Install ARM Toolchain & CMake
+      - name: Install ARM Toolchain & Ninja
         run: |
           sudo apt-get update
-          sudo apt-get install -y gcc-arm-none-eabi libnewlib-arm-none-eabi build-essential cmake wget unzip
+          sudo apt-get install -y gcc-arm-none-eabi libnewlib-arm-none-eabi build-essential cmake wget unzip ninja-build
 
       - name: Download Raspberry Pi Pico SDK Archive
         run: |
@@ -37,23 +37,25 @@ jobs:
         run: |
           mkdir build_rp2040
           cd build_rp2040
-          # Указываем CMake использовать ARM кросс-компилятор и путь к SDK
-          cmake -DPICO_SDK_PATH=/home/runner/pico-sdk \
-                -DCMAKE_TOOLCHAIN_FILE=/home/runner/pico-sdk/cmake/preload/toolchains/pico_arm_gcc.cmake \
+          # Исправленный путь к тулчейну ARM и сборщик Ninja
+          cmake -G Ninja \
+                -DPICO_SDK_PATH=/home/runner/pico-sdk \
+                -DCMAKE_TOOLCHAIN_FILE=/home/runner/pico-sdk/cmake/toolchains/pico_arm_gcc.cmake \
                 ..
-          make -j$(nproc)
+          ninja
 
       - name: Build Samples for RP2350
         run: |
           mkdir build_rp2350
           cd build_rp2350
-          # Указываем CMake собирать под архитектуру RP2350
-          cmake -DPICO_SDK_PATH=/home/runner/pico-sdk \
-                -DCMAKE_TOOLCHAIN_FILE=/home/runner/pico-sdk/cmake/preload/toolchains/pico_arm_gcc.cmake \
+          # Исправленный путь к тулчейну ARM и сборщик Ninja под RP2350
+          cmake -G Ninja \
+                -DPICO_SDK_PATH=/home/runner/pico-sdk \
+                -DCMAKE_TOOLCHAIN_FILE=/home/runner/pico-sdk/cmake/toolchains/pico_arm_gcc.cmake \
                 -DPICO_PLATFORM=rp2350 \
                 -DPICO_BOARD=pico2 \
                 ..
-          make -j$(nproc)
+          ninja
 
       - name: Upload Ready UF2 Firmware
         uses: actions/upload-artifact@v4
