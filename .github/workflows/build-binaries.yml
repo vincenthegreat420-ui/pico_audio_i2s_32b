@@ -31,14 +31,16 @@ jobs:
           unzip /home/runner/pico-sdk.zip -d /home/runner/
           mv /home/runner/pico-sdk-2.1.1/* /home/runner/pico-sdk/
 
-      - name: Build Samples for RP2040 (Pico 1)
+      - name: Build Sine Wave Sample for RP2040
         run: |
-          mkdir build_rp2040
-          cd build_rp2040
+          # Переходим строго в папку сэмпла, где лежит правильный CMakeLists.txt
+          cd samples/sine_wave_i2s_32b
+          mkdir build
+          cd build
           
-          # Запускаем сборку через универсальный ARM-тулчейн самого CMake
+          # Запускаем сборку, подсовывая тулчейн, который идет вместе с самим SDK
           cmake -DPICO_SDK_PATH=/home/runner/pico-sdk \
-                -DCMAKE_TOOLCHAIN_FILE=/home/runner/pico-sdk/cmake/toolchains/pico_arm_gcc.cmake \
+                -DCMAKE_TOOLCHAIN_FILE=/home/runner/pico-sdk/cmake/pico_utils.cmake \
                 ..
           make -j$(nproc)
 
@@ -47,4 +49,4 @@ jobs:
         with:
           name: pico-audio-firmware
           path: |
-            build_rp2040/**/*.uf2
+            samples/sine_wave_i2s_32b/build/**/*.uf2
