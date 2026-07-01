@@ -36,7 +36,7 @@ jobs:
           # Переходим в папку сэмпла
           cd samples/sine_wave_i2s_32b
           
-          # Переписываем CMakeLists.txt на чистый вариант без костылей автора
+          # Переписываем CMakeLists.txt (исправили main.c на main.cpp)
           cat << 'EOF' > CMakeLists.txt
           cmake_minimum_required(VERSION 3.13)
           
@@ -48,17 +48,17 @@ jobs:
           pico_sdk_init()
           
           add_executable(sine_wave_i2s_32b
-              main.c
+              main.cpp
           )
           
           # Подключаем саму библиотеку 32-битного аудио
           target_link_libraries(sine_wave_i2s_32b pico_stdlib hardware_pio hardware_dma)
           
-          # Включаем generation UF2 файла для прошивки
+          # Включаем генерацию UF2 файла для прошивки
           pico_add_extra_outputs(sine_wave_i2s_32b)
           EOF
           
-          # Запускаем сборку (убрали ручной поиск тулчейна к чертям)
+          # Запускаем сборку
           mkdir build && cd build
           export PICO_SDK_PATH=/home/runner/pico-sdk
           cmake ..
