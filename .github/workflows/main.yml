@@ -13,7 +13,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          submodules: recursive  # Автоматически подтянет субмодули, если они есть
+          submodules: recursive
 
       - name: Install ARM Toolchain & CMake
         run: |
@@ -22,22 +22,19 @@ jobs:
 
       - name: Setup Raspberry Pi Pico SDK
         run: |
-          cd ..
-          git clone --depth 1 --branch 2.1.1 https://github.com
-          cd pico-sdk
+          git clone --depth 1 --branch 2.1.1 https://github.com ${GITHUB_WORKSPACE}/pico-sdk
+          cd ${GITHUB_WORKSPACE}/pico-sdk
           git submodule update --init
-          echo "PICO_SDK_PATH=$PWD" >> $GITHUB_ENV
+          echo "PICO_SDK_PATH=${GITHUB_WORKSPACE}/pico-sdk" >> $GITHUB_ENV
 
       - name: Build Samples for RP2040 (Pico 1)
         run: |
-          # Создаем общую папку для сборки под RP2040
           mkdir -p build_rp2040 && cd build_rp2040
           cmake ..
           make -j$(nproc)
 
       - name: Build Samples for RP2350 (Pico 2)
         run: |
-          # Создаем общую папку для сборки под RP2350
           mkdir -p build_rp2350 && cd build_rp2350
           cmake -DPICO_PLATFORM=rp2350 -DPICO_BOARD=pico2 ..
           make -j$(nproc)
