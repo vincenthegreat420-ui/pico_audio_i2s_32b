@@ -1,4 +1,4 @@
-name: Build Audio Firmware
+name: Build Pico Audio I2S 32b
 
 on:
   push:
@@ -10,54 +10,75 @@ jobs:
   build-pico:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
+      # 1. Скачиваем сам проект в отдельную папку, как просит автор
+      - name: Checkout project
         uses: actions/checkout@v4
         with:
           submodules: recursive
+          path: pico_audio_i2s_32b
 
+      # 2. Ставим официальный компилятор ARM
       - name: Install ARM Toolchain & CMake
         run: |
           sudo apt-get update
           sudo apt-get install -y gcc-arm-none-eabi libnewlib-arm-none-eabi build-essential cmake
 
-      - name: Checkout Old Stable Pico SDK
+      # 3. Качаем оригинальный SDK 2.1.1 со всеми скрытыми потрохами
+      - name: Checkout pico-sdk
         uses: actions/checkout@v4
         with:
           repository: raspberrypi/pico-sdk
-          ref: 1.5.1
+          ref: 2.1.1
           submodules: recursive
           path: pico-sdk
 
-      - name: Patch and Build Sine Wave Sample
-        run: |
-          mv pico-sdk /home/runner/pico-sdk
-          cd samples/sine_wave_i2s_32b
-          
-          # СМОТРИМ ЧТО ТУТ ЛЕЖИТ НА САМОМ ДЕЛЕ
-          echo "=== СПИСОК ФАЙЛОВ В ПАПКЕ СЭМПЛА ==="
-          ls -la
-          echo "====================================="
-          
-          echo "=== СМОТРИМ ОРИГИНАЛЬНЫЙ СМЕЙК ==="
-          cat CMakeLists.txt || true
-          echo "=================================="
+      # 4. Качаем дополнительные либы (extras), без которых аудио-стек автора не пашет
+      - name: Checkout pico-extras
+        uses: actions/checkout@v4
+        with:
+          repository: raspberrypi/pico-extras
+          ref: sdk-2.1.1
+          submodules: recursive
+          path: pico-extras
 
-          cat << 'EOF' > CMakeLists.txt
-          cmake_minimum_required(VERSION 3.13)
-          include($ENV{PICO_SDK_PATH}/external/pico_sdk_import.cmake)
-          project(sine_wave_i2s_32b C CXX ASM)
-          pico_sdk_init()
+      # 5. Качаем примеры (examples), которые тоже требуются для линковки
+      - name: Checkout pico-examples
+        uses: actions/checkout@v4
+        with:
+          repository: raspberrypi/pico-examples
+          ref: sdk-2.1.1
+          submodules: recursive
+          path: pico-examples
+
+      # 6. Собираем генератор синуса под классический чип RP2040
+      - name: Build for RP2040 (Pico 1)
+        run: |
+          export PICO_SDK_PATH=$GITHUB_WORKSPACE/pico-sdk
+          export PICO_EXTRAS_PATH=$GITHUB_WORKSPACE/pico-extras
+          export PICO_EXAMPLES_PATH=$GITHUB_WORKSPACE/pico-examples
           
-          # Сюда мы впишем правильный файл после того как увидим лог ls
-          add_executable(sine_wave_i2s_32b
-              main.cpp
-          )
-          
-          target_link_libraries(sine_wave_i2s_32b pico_stdlib hardware_pio hardware_dma)
-          pico_add_extra_outputs(sine_wave_i2s_32b)
-          EOF
-          
+          cd pico_audio_i2s_32b/samples/sine_wave_i2s_32b
           mkdir build && cd build
-          export PICO_SDK_PATH=/home/runner/pico-sdk
           cmake ..
           make -j$(nproc)
+
+      # 7. Собираем тот же генератор синуса под новый чип RP2350
+      - name: Build for RP2350 (Pico 2)
+        run: |
+          export PICO_SDK_PATH=$GITHUB_WORKSPACE/pico-sdk
+          export PICO_EXTRAS_PATH=$GITHUB_WORKSPACE/pico-extras
+          export PICO_EXAMPLES_PATH=$GITHUB_WORKSPACE/pico-examples
+          
+          cd pico_audio_i2s_32b/samples/sine_wave_i2s_32b
+          mkdir build_rp2350 && cd build_rp2350
+          cmake -DPICO_PLATFORM=rp2350 -DPICO_BOARD=pico2 ..
+          make -j$(nproc)
+
+      # 8. Забираем готовые файлы прошивок (.uf2) в артефакты
+      - name: Upload Ready UF2 Firmware
+        uses: actions/upload-artifact@v4
+        with:
+          name: pico-audio-firmware
+          path: |
+            pico_audio_i2s_32b/samples/sine_wave_i2s_32b/build/**/*.uf2
+            pico_audio_i2s_32b/samples/sine_wave_i2s_32b/build_rp2350/**/*.uf2
