@@ -18,25 +18,25 @@ jobs:
       - name: Install ARM Toolchain & CMake
         run: |
           sudo apt-get update
-          sudo apt-get install -y gcc-arm-none-eabi libnewlib-arm-none-eabi build-essential cmake wget unzip
+          sudo apt-get install -y gcc-arm-none-eabi libnewlib-arm-none-eabi build-essential cmake
 
-      - name: Download Raspberry Pi Pico SDK Archive
-        run: |
-          mkdir -p /home/runner/pico-sdk
-          PART1="https://github.com"
-          PART2="/raspberrypi/pico-sdk/archive/refs/tags/2.1.1.zip"
-          FULL_URL="${PART1}${PART2}"
-          
-          wget $FULL_URL -O /home/runner/pico-sdk.zip
-          unzip /home/runner/pico-sdk.zip -d /home/runner/
-          mv /home/runner/pico-sdk-2.1.1/* /home/runner/pico-sdk/
+      - name: Checkout Raspberry Pi Pico SDK properly
+        uses: actions/checkout@v4
+        with:
+          repository: raspberrypi/pico-sdk
+          ref: 2.1.1
+          submodules: recursive
+          path: pico-sdk
 
       - name: Patch and Build Sine Wave Sample
         run: |
+          # Переносим SDK в нужную папку
+          mv pico-sdk /home/runner/pico-sdk
+          
           # Переходим в папку сэмпла
           cd samples/sine_wave_i2s_32b
           
-          # Полностью переписываем CMakeLists.txt на чистый и рабочий вариант без костылей автора
+          # Полностью переписываем CMakeLists.txt на чистый вариант без костылей автора
           cat << 'EOF' > CMakeLists.txt
           cmake_minimum_required(VERSION 3.13)
           
