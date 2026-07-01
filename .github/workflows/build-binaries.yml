@@ -23,7 +23,12 @@ jobs:
       - name: Download Raspberry Pi Pico SDK Archive
         run: |
           mkdir -p /home/runner/pico-sdk
-          wget https://github.com -O /home/runner/pico-sdk.zip
+          # Собираем ссылку по кускам, чтобы парсер не сожрал хвост
+          PART1="https://github.com"
+          PART2="/raspberrypi/pico-sdk/archive/refs/tags/2.1.1.zip"
+          FULL_URL="${PART1}${PART2}"
+          
+          wget $FULL_URL -O /home/runner/pico-sdk.zip
           unzip /home/runner/pico-sdk.zip -d /home/runner/
           mv /home/runner/pico-sdk-2.1.1/* /home/runner/pico-sdk/
           cd /home/runner/pico-sdk
