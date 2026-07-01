@@ -23,7 +23,6 @@ jobs:
       - name: Download Raspberry Pi Pico SDK Archive
         run: |
           mkdir -p /home/runner/pico-sdk
-          # Собираем ссылку по кускам, чтобы парсер не сожрал хвост
           PART1="https://github.com"
           PART2="/raspberrypi/pico-sdk/archive/refs/tags/2.1.1.zip"
           FULL_URL="${PART1}${PART2}"
@@ -38,14 +37,22 @@ jobs:
         run: |
           mkdir build_rp2040
           cd build_rp2040
-          cmake ..
+          # Указываем CMake использовать ARM кросс-компилятор и путь к SDK
+          cmake -DPICO_SDK_PATH=/home/runner/pico-sdk \
+                -DCMAKE_TOOLCHAIN_FILE=/home/runner/pico-sdk/cmake/preload/toolchains/pico_arm_gcc.cmake \
+                ..
           make -j$(nproc)
 
       - name: Build Samples for RP2350
         run: |
           mkdir build_rp2350
           cd build_rp2350
-          cmake -DPICO_PLATFORM=rp2350 -DPICO_BOARD=pico2 ..
+          # Указываем CMake собирать под архитектуру RP2350
+          cmake -DPICO_SDK_PATH=/home/runner/pico-sdk \
+                -DCMAKE_TOOLCHAIN_FILE=/home/runner/pico-sdk/cmake/preload/toolchains/pico_arm_gcc.cmake \
+                -DPICO_PLATFORM=rp2350 \
+                -DPICO_BOARD=pico2 \
+                ..
           make -j$(nproc)
 
       - name: Upload Ready UF2 Firmware
