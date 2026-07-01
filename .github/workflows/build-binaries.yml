@@ -30,43 +30,34 @@ jobs:
 
       - name: Patch and Build Sine Wave Sample
         run: |
-          # Переносим SDK в нужную папку
           mv pico-sdk /home/runner/pico-sdk
-          
-          # Переходим в папку сэмпла
           cd samples/sine_wave_i2s_32b
           
-          # Переписываем CMakeLists.txt (исправили main.c на main.cpp)
+          # СМОТРИМ ЧТО ТУТ ЛЕЖИТ НА САМОМ ДЕЛЕ
+          echo "=== СПИСОК ФАЙЛОВ В ПАПКЕ СЭМПЛА ==="
+          ls -la
+          echo "====================================="
+          
+          echo "=== СМОТРИМ ОРИГИНАЛЬНЫЙ СМЕЙК ==="
+          cat CMakeLists.txt || true
+          echo "=================================="
+
           cat << 'EOF' > CMakeLists.txt
           cmake_minimum_required(VERSION 3.13)
-          
-          # Подключаем родной импорт из Pico SDK напрямую
           include($ENV{PICO_SDK_PATH}/external/pico_sdk_import.cmake)
-          
           project(sine_wave_i2s_32b C CXX ASM)
-          
           pico_sdk_init()
           
+          # Сюда мы впишем правильный файл после того как увидим лог ls
           add_executable(sine_wave_i2s_32b
               main.cpp
           )
           
-          # Подключаем саму библиотеку 32-битного аудио
           target_link_libraries(sine_wave_i2s_32b pico_stdlib hardware_pio hardware_dma)
-          
-          # Включаем генерацию UF2 файла для прошивки
           pico_add_extra_outputs(sine_wave_i2s_32b)
           EOF
           
-          # Запускаем сборку
           mkdir build && cd build
           export PICO_SDK_PATH=/home/runner/pico-sdk
           cmake ..
           make -j$(nproc)
-
-      - name: Upload Ready UF2 Firmware
-        uses: actions/upload-artifact@v4
-        with:
-          name: pico-audio-firmware
-          path: |
-            samples/sine_wave_i2s_32b/build/**/*.uf2
