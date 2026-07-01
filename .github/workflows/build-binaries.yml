@@ -6,9 +6,6 @@ on:
   pull_request:
     branches: [ "main", "master" ]
 
-env:
-  SDK_URL: https://github.com
-
 jobs:
   build-pico:
     runs-on: ubuntu-latest
@@ -21,13 +18,15 @@ jobs:
       - name: Install ARM Toolchain & CMake
         run: |
           sudo apt-get update
-          sudo apt-get install -y gcc-arm-none-eabi libnewlib-arm-none-eabi build-essential cmake
+          sudo apt-get install -y gcc-arm-none-eabi libnewlib-arm-none-eabi build-essential cmake wget unzip
 
-      - name: Setup Raspberry Pi Pico SDK
+      - name: Download Raspberry Pi Pico SDK Archive
         run: |
-          git clone --depth 1 --branch 2.1.1 $SDK_URL /home/runner/pico-sdk
+          mkdir -p /home/runner/pico-sdk
+          wget https://github.com -O /home/runner/pico-sdk.zip
+          unzip /home/runner/pico-sdk.zip -d /home/runner/
+          mv /home/runner/pico-sdk-2.1.1/* /home/runner/pico-sdk/
           cd /home/runner/pico-sdk
-          git submodule update --init
           echo "PICO_SDK_PATH=/home/runner/pico-sdk" >> $GITHUB_ENV
 
       - name: Build Samples for RP2040
