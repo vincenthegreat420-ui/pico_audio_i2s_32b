@@ -22,8 +22,8 @@ jobs:
 
       - name: Setup Raspberry Pi Pico SDK
         run: |
-          git clone --depth 1 --branch 2.1.1 https://github.com ${GITHUB_WORKSPACE}/pico-sdk
-          cd ${GITHUB_WORKSPACE}/pico-sdk
+          git clone --depth 1 --branch 2.1.1 "https://github.com" "${GITHUB_WORKSPACE}/pico-sdk"
+          cd "${GITHUB_WORKSPACE}/pico-sdk"
           git submodule update --init
           echo "PICO_SDK_PATH=${GITHUB_WORKSPACE}/pico-sdk" >> $GITHUB_ENV
 
