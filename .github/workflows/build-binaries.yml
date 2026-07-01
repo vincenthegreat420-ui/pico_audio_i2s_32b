@@ -54,14 +54,14 @@ jobs:
           # Подключаем саму библиотеку 32-битного аудио
           target_link_libraries(sine_wave_i2s_32b pico_stdlib hardware_pio hardware_dma)
           
-          # Включаем генерацию UF2 файла для прошивки
+          # Включаем generation UF2 файла для прошивки
           pico_add_extra_outputs(sine_wave_i2s_32b)
           EOF
           
-          # Запускаем сборку
+          # Запускаем сборку (убрали ручной поиск тулчейна к чертям)
           mkdir build && cd build
           export PICO_SDK_PATH=/home/runner/pico-sdk
-          cmake -DCMAKE_TOOLCHAIN_FILE=/home/runner/pico-sdk/cmake/toolchains/pico_arm_gcc.cmake ..
+          cmake ..
           make -j$(nproc)
 
       - name: Upload Ready UF2 Firmware
